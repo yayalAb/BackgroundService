@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/home/appdiv/Documents/Projects/MyBackgroundService/MyBackgroundService.csproj": {}
+    "C:\\Users\\Yayal\\Documents\\OCRA Project\\BackgroundService\\MyBackgroundService.csproj": {}
   },
   "projects": {
-    "/home/appdiv/Documents/Projects/MyBackgroundService/MyBackgroundService.csproj": {
+    "C:\\Users\\Yayal\\Documents\\OCRA Project\\BackgroundService\\MyBackgroundService.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/appdiv/Documents/Projects/MyBackgroundService/MyBackgroundService.csproj",
+        "projectUniqueName": "C:\\Users\\Yayal\\Documents\\OCRA Project\\BackgroundService\\MyBackgroundService.csproj",
         "projectName": "MyBackgroundService",
-        "projectPath": "/home/appdiv/Documents/Projects/MyBackgroundService/MyBackgroundService.csproj",
-        "packagesPath": "/home/appdiv/.nuget/packages/",
-        "outputPath": "/home/appdiv/Documents/Projects/MyBackgroundService/obj/",
+        "projectPath": "C:\\Users\\Yayal\\Documents\\OCRA Project\\BackgroundService\\MyBackgroundService.csproj",
+        "packagesPath": "C:\\Users\\Yayal\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Yayal\\Documents\\OCRA Project\\BackgroundService\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/appdiv/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\Yayal\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net6.0"
@@ -38,9 +38,29 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "dependencies": {
+            "EasyConsole": {
+              "target": "Package",
+              "version": "[1.1.0, )"
+            },
+            "Microsoft.AspNetCore.Http": {
+              "target": "Package",
+              "version": "[2.2.2, )"
+            },
             "Microsoft.Extensions.Hosting.WindowsServices": {
               "target": "Package",
               "version": "[7.0.1, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            },
+            "SourceAFIS": {
+              "target": "Package",
+              "version": "[1.7.0, )"
+            },
+            "System.Drawing.Common": {
+              "target": "Package",
+              "version": "[7.0.0, )"
             }
           },
           "imports": [
@@ -49,7 +69,8 @@
             "net47",
             "net471",
             "net472",
-            "net48"
+            "net48",
+            "net481"
           ],
           "assetTargetFallback": true,
           "warn": true,
@@ -58,7 +79,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/6.0.118/RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.410\\RuntimeIdentifierGraph.json"
         }
       }
     }
