@@ -1,6 +1,0 @@
-C:\Users\Yayal\Documents\OCRA Project\BackgroundService\obj\Debug\net6.0\MyBackgroundService.csproj.AssemblyReference.cache
-C:\Users\Yayal\Documents\OCRA Project\BackgroundService\obj\Debug\net6.0\MyBackgroundService.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\Yayal\Documents\OCRA Project\BackgroundService\obj\Debug\net6.0\MyBackgroundService.AssemblyInfoInputs.cache
-C:\Users\Yayal\Documents\OCRA Project\BackgroundService\obj\Debug\net6.0\MyBackgroundService.AssemblyInfo.cs
-C:\Users\Yayal\Documents\OCRA Project\BackgroundService\obj\Debug\net6.0\MyBackgroundService.csproj.CoreCompileInputs.cache
-C:\Users\Yayal\Documents\OCRA Project\BackgroundService\obj\Debug\net6.0\refint\MyBackgroundService.dll
