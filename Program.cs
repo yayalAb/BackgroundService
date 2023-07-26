@@ -76,25 +76,25 @@ namespace MyBackgroundService
 			context.Response.AddHeader("Access-Control-Allow-Headers", "*");
 			context.Response.AddHeader("lang","en");
 			context.Response.AddHeader("Authorization",accessToken);
-			if (context.Request.HttpMethod == "OPTIONS")
-			{
-				Console
-				.WriteLine("It is perfilght request ");
-			}else
-			{
-				 Console
-                .WriteLine("It is perfilght a request option");
-			}
 			context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
-
 			// Create and serialize response message
 			 var response = new Response
 			{
 				status = 200,
 				sucess = true,
 				massage = "Fingerprint Detected!",
+				// FpImage = fp.ScannFIngerPrint()
+			};
+		if (context.Request.HttpMethod != "OPTIONS")
+			{
+          response = new Response
+			{
+				status = 200,
+				sucess = true,
+				massage = "Fingerprint Detected!",
 				FpImage = fp.ScannFIngerPrint()
 			};
+			}
 			var json = JsonSerializer.Serialize(response);
 
 
@@ -154,7 +154,7 @@ namespace MyBackgroundService
 				var device = new DeviceAccessor().AccessFingerprintDevice();
 				ManualResetEvent fingerprintDetectedEvent = new ManualResetEvent(false);
 						
-			device.FingerDetected += (sender, args) => {
+			       device.FingerDetected += (sender, args) => {
 					FingerPrint = HandleNewFingerprint(device.ReadFingerprint());
 					 fingerprintDetectedEvent.Set();
 				
@@ -167,7 +167,7 @@ namespace MyBackgroundService
 		   else {
 			 Output.WriteLine("Connection time out");
 			 }
-				device.Dispose();
+				// device.Dispose();
 		 return FingerPrint;
 							}
 			private string ? HandleNewFingerprint(Bitmap bitmap)
