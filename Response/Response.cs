@@ -8,10 +8,10 @@ namespace BackgroundServiceResponse
 		public class Response
 		
 		{
-		public int status { get; set; } = 404;
-		public bool sucess { get; set; }=false;
+		public int statusCode { get; set; } = 404;
+		public bool success { get; set; }=false;
 		
-		public string massage { get; set; } = "";
+		public string message { get; set; } = "";
 		public  string? FpImage { get; set; } 	
 				
 		}
