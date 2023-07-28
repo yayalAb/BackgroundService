@@ -4,164 +4,173 @@ using System.Threading;
 
 namespace Futronic.Devices.FS26
 {
-    public class FingerprintDevice : IDisposable
-    {
-        private const int FingerPresenseCheckIntervalInMs = 50;
-        private const int FingerDetectionContrastThreshold = 800;
-        private const int NDose = 4;
+	public class FingerprintDevice : IDisposable
+	{
+		private const int FingerPresenseCheckIntervalInMs = 50;
+		private const int FingerDetectionContrastThreshold = 800;
+		private const int NDose = 4;
 
-        private readonly IntPtr handle;
-        private readonly Timer fingerDetectionTimer;
+		private readonly IntPtr handle;
+		private readonly Timer fingerDetectionTimer;
 
-        private readonly object ledStatusWritingLock = new object();
+		private readonly object ledStatusWritingLock = new object();
 
-        public event EventHandler FingerDetected;
-        public event EventHandler FingerReleased;
+		public event EventHandler FingerDetected;
+		public event EventHandler FingerReleased;
 
-        public FingerprintDevice(IntPtr handle)
-        {
-            this.handle = handle;
-            this.fingerDetectionTimer = new Timer(this.FingerDetectionCallback, null, Timeout.Infinite, Timeout.Infinite);
-        }
+		public FingerprintDevice(IntPtr handle)
+		{
+			this.handle = handle;
+			this.fingerDetectionTimer = new Timer(this.FingerDetectionCallback, null, Timeout.Infinite, Timeout.Infinite);
+		}
 
-        public bool GreenLed
-        {
-            get => this.GetLedState().GreenIsOn;
-            set => this.SetGreenLed(value);
-        }
+		public bool GreenLed
+		{
+			get => this.GetLedState().GreenIsOn;
+			set => this.SetGreenLed(value);
+		}
 
-        public bool RedLed
-        {
-            get => this.GetLedState().RedIsOn;
-            set => this.SetRedLed(value);
-        }
+		public bool RedLed
+		{
+			get => this.GetLedState().RedIsOn;
+			set => this.SetRedLed(value);
+		}
 
-        public bool IsFingerPresent { get; private set; }
+		public bool IsFingerPresent { get; private set; }
 
-        public void StartFingerDetection()
-        {
-            fingerDetectionTimer.Change(0, FingerPresenseCheckIntervalInMs);
-        }
-        public void StopFingerDetection()
-        {
-            fingerDetectionTimer.Change(Timeout.Infinite, Timeout.Infinite);
-        }
+		public void StartFingerDetection()
+		{
+			fingerDetectionTimer.Change(0, FingerPresenseCheckIntervalInMs);
+		}
+		public void StopFingerDetection()
+		{
+			fingerDetectionTimer.Change(Timeout.Infinite, Timeout.Infinite);
+		}
 
-        private void FingerDetectionCallback(object state)
-        {
-            var result = LibScanApi.ftrScanIsFingerPresent(this.handle, out var pFrameParameters);
+		private void FingerDetectionCallback(object state)
+		{
+			var result = LibScanApi.ftrScanIsFingerPresent(this.handle, out var pFrameParameters);
 
-            if (!result)
-            {
-                // There could be an error
-                // var error = LibScanApi.GetLastError();
-                return;
-            }
+			if (!result)
+			{
+				// There could be an error
+				// var error = LibScanApi.GetLastError();
+				return;
+			}
 
-            var lastFingerDetectedResult = pFrameParameters.nContrastOnDose2 > FingerDetectionContrastThreshold;
+			var lastFingerDetectedResult = pFrameParameters.nContrastOnDose2 > FingerDetectionContrastThreshold;
 
-            if (lastFingerDetectedResult && !this.IsFingerPresent)
-            {
-                this.IsFingerPresent = true;
-                this.OnFingerDetected();
-            }
+			if (lastFingerDetectedResult && !this.IsFingerPresent)
+			{
+				this.IsFingerPresent = true;
+				this.OnFingerDetected();
+			}
 
-            if (!lastFingerDetectedResult && this.IsFingerPresent)
-            {
-                this.IsFingerPresent = false;
-                this.OnFingerReleased();
-            }
-        }
+			if (!lastFingerDetectedResult && this.IsFingerPresent)
+			{
+				this.IsFingerPresent = false;
+				this.OnFingerReleased();
+			}
+		}
 
-        public void Dispose()
-        {
-            this.fingerDetectionTimer.Change(Timeout.Infinite, Timeout.Infinite);
-            this.fingerDetectionTimer.Dispose();
+		public void Dispose()
+		{
+			this.fingerDetectionTimer.Change(Timeout.Infinite, Timeout.Infinite);
+			this.fingerDetectionTimer.Dispose();
 
-            LibScanApi.ftrScanCloseDevice(this.handle);
-        }
+			LibScanApi.ftrScanCloseDevice(this.handle);
+		}
 
-        protected virtual void OnFingerDetected()
-        {
-            FingerDetected?.Invoke(this, EventArgs.Empty);
-        }
+		protected virtual void OnFingerDetected()
+		{
+			FingerDetected?.Invoke(this, EventArgs.Empty);
+		}
 
-        public LedState GetLedState()
-        {
-            LibScanApi.ftrScanGetDiodesStatus(this.handle, out bool greenIsOn, out bool redIsOn);
+		public LedState GetLedState()
+		{
+			LibScanApi.ftrScanGetDiodesStatus(this.handle, out bool greenIsOn, out bool redIsOn);
 
-            return new LedState()
-            {
-                GreenIsOn = greenIsOn,
-                RedIsOn = redIsOn,
-            };
-        }
+			return new LedState()
+			{
+				GreenIsOn = greenIsOn,
+				RedIsOn = redIsOn,
+			};
+		}
 
-        public void SwitchLedState(bool green, bool red)
-        {
-            LibScanApi.ftrScanSetDiodesStatus(this.handle, (byte)(green ? 255 : 0), (byte)(red ? 255 : 0));
-        }
+		public void SwitchLedState(bool green, bool red)
+		{
+			LibScanApi.ftrScanSetDiodesStatus(this.handle, (byte)(green ? 255 : 0), (byte)(red ? 255 : 0));
+		}
+		public void SwitchLedStateOn(bool green, bool red)
+		{
+			LibScanApi.ftrScanSetDiodesStatus(this.handle, (byte)(255), (byte)(0));
+		}
+		public void SwitchLedStateOff(bool green, bool red)
+		{
+			LibScanApi.ftrScanSetDiodesStatus(this.handle, (byte)(0), (byte)(255));
+		}
+		
 
-        public Bitmap ReadFingerprint()
-        {
-            var t = new LibScanApi._FTRSCAN_IMAGE_SIZE();
-            LibScanApi.ftrScanGetImageSize(this.handle, out t);
+		public Bitmap ReadFingerprint()
+		{
+			var t = new LibScanApi._FTRSCAN_IMAGE_SIZE();
+			LibScanApi.ftrScanGetImageSize(this.handle, out t);
 
-            byte[] arr = new byte[t.nImageSize];
-            LibScanApi.ftrScanGetImage(this.handle, NDose, arr);
+			byte[] arr = new byte[t.nImageSize];
+			LibScanApi.ftrScanGetImage(this.handle, NDose, arr);
 
-            var width = t.nWidth;
-            var height = t.nHeight;
+			var width = t.nWidth;
+			var height = t.nHeight;
 
-            var image = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+			var image = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    byte a = (byte)(0xFF - arr[(y * width) + x]);
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					byte a = (byte)(0xFF - arr[(y * width) + x]);
 
-                    image.SetPixel(x, y, Color.FromArgb(a, a, a));
-                }
-            }
+					image.SetPixel(x, y, Color.FromArgb(a, a, a));
+				}
+			}
 
-            return image;
-        }
+			return image;
+		}
 
-        protected void SetGreenLed(bool state)
-        {
-            lock (this.ledStatusWritingLock)
-            {
-                LibScanApi.ftrScanGetDiodesStatus(this.handle, out bool greenIsOn, out bool redIsOn);
+		protected void SetGreenLed(bool state)
+		{
+			lock (this.ledStatusWritingLock)
+			{
+				LibScanApi.ftrScanGetDiodesStatus(this.handle, out bool greenIsOn, out bool redIsOn);
 
-                greenIsOn = state;
+				greenIsOn = state;
 
-                LibScanApi.ftrScanSetDiodesStatus(this.handle, (byte)(greenIsOn ? 255 : 0), (byte)(redIsOn ? 255 : 0));
-            }
-        }
+				LibScanApi.ftrScanSetDiodesStatus(this.handle, (byte)(greenIsOn ? 255 : 0), (byte)(redIsOn ? 255 : 0));
+			}
+		}
 
-        protected void SetRedLed(bool state)
-        {
-            lock (this.ledStatusWritingLock)
-            {
-                LibScanApi.ftrScanGetDiodesStatus(this.handle, out bool greenIsOn, out bool redIsOn);
+		protected void SetRedLed(bool state)
+		{
+			lock (this.ledStatusWritingLock)
+			{
+				LibScanApi.ftrScanGetDiodesStatus(this.handle, out bool greenIsOn, out bool redIsOn);
 
-                redIsOn = state;
+				redIsOn = state;
 
-                LibScanApi.ftrScanSetDiodesStatus(this.handle, (byte)(greenIsOn ? 255 : 0), (byte)(redIsOn ? 255 : 0));
-            }
-        }
+				LibScanApi.ftrScanSetDiodesStatus(this.handle, (byte)(greenIsOn ? 255 : 0), (byte)(redIsOn ? 255 : 0));
+			}
+		}
 
-        protected virtual void OnFingerReleased()
-        {
-            FingerReleased?.Invoke(this, EventArgs.Empty);
-        }
-    }
+		protected virtual void OnFingerReleased()
+		{
+			FingerReleased?.Invoke(this, EventArgs.Empty);
+		}
+	}
 
-    public class LedState
-    {
-        public bool GreenIsOn { get; set; }
+	public class LedState
+	{
+		public bool GreenIsOn { get; set; }
 
-        public bool RedIsOn { get; set; }
-    }
+		public bool RedIsOn { get; set; }
+	}
 }

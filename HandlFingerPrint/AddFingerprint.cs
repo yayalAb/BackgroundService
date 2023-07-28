@@ -22,6 +22,7 @@ namespace FpBackgroundService.HandlFingerPrint
 			var device = new DeviceAccessor().AccessFingerprintDevice();
 			ManualResetEvent fingerprintDetectedEvent = new ManualResetEvent(false);
 			Bitmap bitmapFingerprint = null;
+			device.SwitchLedState(true, false);
 			device.FingerDetected += (sender, args) =>
 			{
 				FingerPrint = HandleNewFingerprint(bitmapFingerprint = device.ReadFingerprint());
@@ -30,19 +31,21 @@ namespace FpBackgroundService.HandlFingerPrint
 			device.StartFingerDetection();
 			Output.WriteLine("Please place your finger on the device or press enter to cancel");
 			if (fingerprintDetectedEvent.WaitOne(10000))
-			{
-				Output.WriteLine("Please place your finger on the device");
+			{	if(!device.IsFingerPresent)	
+					{
+					Output.WriteLine("waiting .......");	
+					}		
 			}
 			else
 			{
 				massage = "Connection time out";
 				Output.WriteLine("Connection time out");
 			}
-			device.Dispose();
+			// device.SwitchLedState(false, true);
+			 device.Dispose();
+			 Output.WriteLine("Validating  Fingerprint ..... ");
 			if (bitmapFingerprint != null && (bitmapFingerprint is Bitmap))
 			{
-				Console
-				.WriteLine("requested Information {0},{1},{2}", userId, Index, IsNewUser);
 				await ValidateFingerprint(bitmapFingerprint, userId, Index, IsNewUser);
 			}
 			return (FingerPrint, massage);
@@ -63,12 +66,12 @@ namespace FpBackgroundService.HandlFingerPrint
 
 		}
 
-		public async Task<string> ValidateFingerprint(Bitmap bitmap, string Id, string index, bool isNewuser)
+		public async Task ValidateFingerprint(Bitmap bitmap, string Id, string index, bool isNewuser)
 		{
 
-			if (Directory.Exists("Tempdata/" + Id + index))
+			if (File.Exists("Tempdata/" + Id + index+".bmp"))
 			{
-				File.Delete("Tempdata/" + Id + index);
+				File.Delete("Tempdata/" + Id + index+".bmp");
 			}
 			if (isNewuser)
 			{
@@ -95,7 +98,6 @@ namespace FpBackgroundService.HandlFingerPrint
 			}
 			}
 			
-			  Console.WriteLine("Validate 3");
 			var newFinger = new Person();
 			var fingerprint = new Fingerprint();
 			fingerprint.AsBitmap = bitmap;
@@ -107,18 +109,36 @@ namespace FpBackgroundService.HandlFingerPrint
 			{
 				var personId = person.Id;
 				massage = $"Duplicate Finger Enrolled with index {personId}!";
-				Output.WriteLine(ConsoleColor.DarkGreen, $"Matched with {personId}!");
+				Output.WriteLine(ConsoleColor.DarkRed, $"Duplicate Finger Enrolled with index {personId}!");
 			}
 
 			if (!persons.Any())
+			{  try
 			{
 				string fileName = Id + index;
-				string randomFilename = fileName + ".bmp";
-				bitmap.Save(Path.Combine("Tempdata", randomFilename));
+                Console.WriteLine("file name : {0}",fileName);
+                string randomFilename = fileName + ".bmp";
+				if (File.Exists("Tempdata/" + randomFilename))
+				{
+					File.Delete("Tempdata/" + randomFilename);
+				}
+				Console.WriteLine("trying to save file {0}", randomFilename);
+				if(!File.Exists("Tempdata/" + randomFilename))
+				{
+				   bitmap.Save(Path.Combine("Tempdata", randomFilename));
+				}
 				massage = "Fingerprint Enrolled Sucessfuly";
-				Output.WriteLine(ConsoleColor.DarkRed, "No match!");
+				Output.WriteLine(ConsoleColor.DarkGreen, "Fingerprint Enrolled Sucessfuly!");	
+			}catch(SystemException ex)
+			{
+				throw new Exception("System Exception !");
 			}
-			return "valid finger pint";
+			catch(Exception ex)
+			{
+					throw new Exception("Error on saving");
+				}
+				
+			}
 		}
 
 		public void IsNewUser()
