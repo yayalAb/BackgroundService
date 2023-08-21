@@ -36,7 +36,7 @@ namespace MyBackgroundService
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 		{
 			listener = new HttpListener();
-			listener.Prefixes.Add("http://192.168.1.3:8000/");
+			listener.Prefixes.Add("http://192.168.1.11:8000/");
 			listener.Start();
 			Console.WriteLine("Listener started ");
 			try
@@ -77,9 +77,20 @@ namespace MyBackgroundService
 			string UserId = queryParams.Get("Id");
 			string Index = queryParams.Get("Index");
 			bool isNewUser=false;
+			bool CheckDuplication = false;
+			bool idDesposRequest = false;
+			
 			if(queryParams?.Get("isNewUser")=="1")
 			{
 				isNewUser = true;
+			}
+			if(queryParams?.Get("WithCheck")=="1")
+			{
+				CheckDuplication = true;
+			}
+			if(queryParams?.Get("IsDespose")=="1")
+			{
+				idDesposRequest = true;
 			}
 			var response = new Response
 			{
@@ -90,8 +101,8 @@ namespace MyBackgroundService
 			};
 			if (context.Request.HttpMethod != "OPTIONS"&&(!string.IsNullOrEmpty(Index)&&(!string.IsNullOrEmpty(Index))))
 			{
-                (string, string) result = await fp.ScannFIngerPrint(UserId, Index, isNewUser);
-                response = new Response
+				(string, string) result = await fp.ScannFIngerPrint(UserId, Index, isNewUser,CheckDuplication,idDesposRequest);
+				response = new Response
 				{
 					statusCode = 200,
 					success = true,

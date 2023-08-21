@@ -17,9 +17,15 @@ namespace FpBackgroundService.HandlFingerPrint
 		private AfisEngine _afis;
 		bool fingerpint = false;
 		string massage = "Fingerprint Detetcted!";
-		public async Task<(string?, string)> ScannFIngerPrint(string userId, string Index, bool IsNewUser)
+		public async Task<(string?, string)> ScannFIngerPrint(string userId, string Index, bool IsNewUser,bool CheckDuplication, bool idDesposRequest)
 		{
 			var device = new DeviceAccessor().AccessFingerprintDevice();
+			if(idDesposRequest)
+			{
+				device.Dispose();
+				this.IsNewUser();
+				return (null, "Desposed");
+			}
 			ManualResetEvent fingerprintDetectedEvent = new ManualResetEvent(false);
 			Bitmap bitmapFingerprint = null;
 			device.SwitchLedState(true, false);
@@ -31,7 +37,8 @@ namespace FpBackgroundService.HandlFingerPrint
 			device.StartFingerDetection();
 			Output.WriteLine("Please place your finger on the device or press enter to cancel");
 			if (fingerprintDetectedEvent.WaitOne(10000))
-			{	if(!device.IsFingerPresent)	
+			{	
+				if(!device.IsFingerPresent)	
 					{
 					Output.WriteLine("waiting .......");	
 					}		
@@ -41,13 +48,17 @@ namespace FpBackgroundService.HandlFingerPrint
 				massage = "Connection time out";
 				Output.WriteLine("Connection time out");
 			}
-			// device.SwitchLedState(false, true);
-			 device.Dispose();
-			 Output.WriteLine("Validating  Fingerprint ..... ");
-			if (bitmapFingerprint != null && (bitmapFingerprint is Bitmap))
+			if(CheckDuplication)
 			{
-				await ValidateFingerprint(bitmapFingerprint, userId, Index, IsNewUser);
+				Output.WriteLine("Validating  Fingerprint ..... ");
+				if (bitmapFingerprint != null && (bitmapFingerprint is Bitmap))
+				{
+					await ValidateFingerprint(bitmapFingerprint, userId, Index, IsNewUser);
+				}
 			}
+			// device.SwitchLedState(false, true);
+			//  device.Dispose();
+			
 			return (FingerPrint, massage);
 		}
 		private string? HandleNewFingerprint(Bitmap bitmap)
@@ -116,8 +127,8 @@ namespace FpBackgroundService.HandlFingerPrint
 			{  try
 			{
 				string fileName = Id + index;
-                Console.WriteLine("file name : {0}",fileName);
-                string randomFilename = fileName + ".bmp";
+				Console.WriteLine("file name : {0}",fileName);
+				string randomFilename = fileName + ".bmp";
 				if (File.Exists("Tempdata/" + randomFilename))
 				{
 					File.Delete("Tempdata/" + randomFilename);
