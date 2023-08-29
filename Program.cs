@@ -5,13 +5,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using BackgroundServiceResponse;
 using FpBackgroundService.HandlFingerPrint;
+using SourceAFIS.Simple;
+using System.Net.Sockets;
+
 namespace MyBackgroundService
 {
 	public class Program
 	{
+		public readonly List<Person> _fingerprints;
+		public int requestcount = 0;
+		
 		public static void Main(string[] args)
 		{
-			CreateHostBuilder(args).Build().Run();
+   			CreateHostBuilder(args).Build().Run();
 		}
 
 		public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -35,9 +41,25 @@ namespace MyBackgroundService
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 		{
-			listener = new HttpListener();
-			listener.Prefixes.Add("http://192.168.1.11:8000/");
+			// listener = new HttpListener();
+			var listener = new HttpListener();
+			var ipAddresses = Dns.GetHostAddresses(Dns.GetHostName());
+
+			foreach (var ipAddress in ipAddresses)
+			{
+				if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
+				{
+					listener.Prefixes.Add("http://" + ipAddress + ":8000/");
+				}
+			}
+			listener.Prefixes.Add("http://localhost:8000/");
+			listener.Prefixes.Add("http://127.0.0.1:8000/");
 			listener.Start();
+			// var ipAddresses = Dns.GetHostAddresses(Dns.GetHostName())
+			// 			.Where(ip => ip.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+
+			// listener.Prefixes.Add("http://192.168.8.127:8000/");
+			// listener.Start();
 			Console.WriteLine("Listener started ");
 			try
 			{
@@ -46,6 +68,7 @@ namespace MyBackgroundService
 					Console.WriteLine($"Listening on port {port}");
 					HttpListenerContext context = await listener.GetContextAsync();
 					ProcessRequest(context);
+					
 				}
 			}
 			catch (OperationCanceledException)
@@ -92,27 +115,29 @@ namespace MyBackgroundService
 			{
 				idDesposRequest = true;
 			}
-			var response = new Response
-			{
-				statusCode = 200,
-				success = true,
-				message = "Id And Index must not be null",
-				// FpImage = fp.ScannFIngerPrint()
-			};
+			var response = new Response();
 			if (context.Request.HttpMethod != "OPTIONS"&&(!string.IsNullOrEmpty(Index)&&(!string.IsNullOrEmpty(Index))))
 			{
-				(string, string) result = await fp.ScannFIngerPrint(UserId, Index, isNewUser,CheckDuplication,idDesposRequest);
+				(string, string, int) result = await fp.ScannFIngerPrint(UserId, Index, isNewUser,CheckDuplication,idDesposRequest);
 				response = new Response
 				{
-					statusCode = 200,
+					statusCode =  result.Item3,
 					success = true,
 					message = result.Item2,
 					FpImage = result.Item1
 				};
+			}else
+			{
+			   response = new Response
+						{
+							statusCode = 200,
+							success = true,
+							message = "Id And Index must not be null",
+							// FpImage = fp.ScannFIngerPrint()
+						};
+				
 			}
 			var json = JsonSerializer.Serialize(response);
-
-
 			// Write response to output stream
 			int retries = 3;
 			bool success = false;
