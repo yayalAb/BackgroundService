@@ -7,6 +7,8 @@ using BackgroundServiceResponse;
 using FpBackgroundService.HandlFingerPrint;
 using SourceAFIS.Simple;
 using System.Net.Sockets;
+using MyBackgroundService.HandlFingerPrint;
+using System;
 
 namespace MyBackgroundService
 {
@@ -55,17 +57,14 @@ namespace MyBackgroundService
 			listener.Prefixes.Add("http://localhost:8000/");
 			listener.Prefixes.Add("http://127.0.0.1:8000/");
 			listener.Start();
-			// var ipAddresses = Dns.GetHostAddresses(Dns.GetHostName())
-			// 			.Where(ip => ip.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+			DisplayNotificationClass notificationObj = new DisplayNotificationClass();
+			notificationObj.displayNotfication("Listener started ");
 
-			// listener.Prefixes.Add("http://192.168.8.127:8000/");
-			// listener.Start();
-			Console.WriteLine("Listener started ");
 			try
 			{
 				while (!stoppingToken.IsCancellationRequested)
 				{
-					Console.WriteLine($"Listening on port {port}");
+                    notificationObj.displayNotfication($"Listening on port {port}");
 					HttpListenerContext context = await listener.GetContextAsync();
 					ProcessRequest(context);
 					
@@ -80,7 +79,8 @@ namespace MyBackgroundService
 
 		private async void ProcessRequest(HttpListenerContext context)
 		{
-			AddFingerprint fp = new AddFingerprint();
+            DisplayNotificationClass notificationObj = new DisplayNotificationClass();
+            AddFingerprint fp = new AddFingerprint();
 			string accessToken = "";
 			string authorizationHeader = context.Request.Headers["Authorization"];
 			if (!string.IsNullOrEmpty(authorizationHeader) && authorizationHeader.StartsWith("Bearer "))
@@ -116,7 +116,7 @@ namespace MyBackgroundService
 				idDesposRequest = true;
 			}
 			var response = new Response();
-			if (context.Request.HttpMethod != "OPTIONS"&&(!string.IsNullOrEmpty(Index)&&(!string.IsNullOrEmpty(Index))))
+			if (context.Request.HttpMethod == "options" && (!string.IsNullOrEmpty(Index) && (!string.IsNullOrEmpty(Index))))
 			{
 				(string, string, int) result = await fp.ScannFIngerPrint(UserId, Index, isNewUser,CheckDuplication,idDesposRequest);
 				response = new Response
@@ -126,18 +126,18 @@ namespace MyBackgroundService
 					message = result.Item2,
 					FpImage = result.Item1
 				};
-			}else
+		    }else   
 			{
 			   response = new Response
 						{
-							statusCode = 200,
+                            statusCode = 200,
 							success = true,
-							message = "Id And Index must not be null",
-							// FpImage = fp.ScannFIngerPrint()
+							message = "id and index must not be null",
+							// fpimage = fp.scannfingerprint()
 						};
-				
-			}
-			var json = JsonSerializer.Serialize(response);
+
+}
+var json = JsonSerializer.Serialize(response);
 			// Write response to output stream
 			int retries = 3;
 			bool success = false;
@@ -148,6 +148,7 @@ namespace MyBackgroundService
 					byte[] buffer = Encoding.UTF8.GetBytes(json);
 
 					await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+					// await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
 					// Close output stream and context
 					context.Response.OutputStream.Close();
 					context.Response.Close();
@@ -155,13 +156,14 @@ namespace MyBackgroundService
 				}
 				catch (IOException ex)
 				{
-					Console.WriteLine($"IO Exception occurred: {ex.Message}");
+
+                    notificationObj.displayNotfication($"IO Exception occurred: {ex.Message}");
 				}
 				catch (HttpListenerException ex)
 				{
 					if (ex.ErrorCode == 64)
 					{
-						Console.WriteLine("Network name is no longer available");
+                        notificationObj.displayNotfication("Network name is no longer available");
 						retries--;
 						if (retries == 0)
 						{
@@ -179,7 +181,7 @@ namespace MyBackgroundService
 				}
 				finally
 				{
-					Console.WriteLine($"Client disconnected: {clientAddress}");
+                    notificationObj.displayNotfication($"Client disconnected: {clientAddress}");
 				}
 			}
 

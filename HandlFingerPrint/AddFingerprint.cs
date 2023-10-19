@@ -7,6 +7,8 @@ using EasyConsole;
 using Futronic.Devices.FS26;
 using System.Drawing.Imaging;
 using SourceAFIS.Simple;
+using System;
+using MyBackgroundService.HandlFingerPrint;
 
 namespace FpBackgroundService.HandlFingerPrint
 {
@@ -20,8 +22,9 @@ namespace FpBackgroundService.HandlFingerPrint
 		 int statusCode = 200;
 		public async Task<(string?, string?, int)> ScannFIngerPrint(string userId, string Index, bool IsNewUser,bool CheckDuplication, bool idDesposRequest)
 		{
-
-			var device = new DeviceAccessor().AccessFingerprintDevice();
+            DisplayNotificationClass notificationObj = new DisplayNotificationClass();
+            var device = new DeviceAccessor().AccessFingerprintDevice();
+		
 			if(idDesposRequest)
 			{
 				device.Dispose();
@@ -37,22 +40,22 @@ namespace FpBackgroundService.HandlFingerPrint
 				fingerprintDetectedEvent.Set();
 			};
 			device.StartFingerDetection();
-			Output.WriteLine("Please place your finger on the device or press enter to cancel");
+            notificationObj.displayNotfication("Please place your finger on the device or press enter to cancel");
 			if (fingerprintDetectedEvent.WaitOne(10000))
 			{	
 				if(!device.IsFingerPresent)	
 					{
-					Output.WriteLine("waiting .......");	
+                    notificationObj.displayNotfication("waiting .......");	
 					}		
 			}
 			else
 			{
 				massage = "Connection time out";
-				Output.WriteLine("Connection time out");
+                notificationObj.displayNotfication("Connection time out");
 			}
 			if(CheckDuplication)
 			{
-				Output.WriteLine("Validating  Fingerprint ..... ");
+                notificationObj.displayNotfication("Validating  Fingerprint ..... ");
 				if (bitmapFingerprint != null && (bitmapFingerprint is Bitmap))
 				{
 					device.Dispose();
@@ -64,7 +67,8 @@ namespace FpBackgroundService.HandlFingerPrint
 			
 			return (FingerPrint, massage, statusCode);
 		}
-		private string? HandleNewFingerprint(Bitmap bitmap)
+ 
+        private string? HandleNewFingerprint(Bitmap bitmap)
 		{
 			byte[] imageData;
 			string base64String = null;
@@ -81,8 +85,9 @@ namespace FpBackgroundService.HandlFingerPrint
 		}
 		public async Task ValidateFingerprint(Bitmap bitmap, string Id, string index, bool isNewuser)
 {
-			
-			if (File.Exists("Tempdata/" + Id + index + ".bmp"))
+            DisplayNotificationClass notificationObj = new DisplayNotificationClass();
+
+            if (File.Exists("Tempdata/" + Id + index + ".bmp"))
 			{
 				File.Delete("Tempdata/" + Id + index + ".bmp");
 			}
@@ -112,12 +117,10 @@ namespace FpBackgroundService.HandlFingerPrint
 					fp.AsBitmap = bitmap1;
 					person.Fingerprints.Add(fp);
 					// Extract the fingerprint in parallel
-					Output.WriteLine(ConsoleColor.DarkRed, $"Extract the fingerprint in parallel started ... !");
 					lock (_afis) // Lock the AfisEngine to ensure thread safety
 					{
 						_afis.Extract(person);
 					}
-					Output.WriteLine(ConsoleColor.DarkRed, $"Extract the fingerprint in parallel end ... !");
 
 					allFingers.Add(person);
 				});
@@ -139,6 +142,8 @@ namespace FpBackgroundService.HandlFingerPrint
 				var personId = person.Id;
 				massage = $"Duplicate Finger Enrolled with index {personId}!";
 				statusCode = 404;
+                
+                notificationObj.displayNotfication($"Duplicate Finger Enrolled with index {personId}!");
 
 				Output.WriteLine(ConsoleColor.DarkRed, $"Duplicate Finger Enrolled with index {personId}!");
 			}
@@ -164,7 +169,9 @@ namespace FpBackgroundService.HandlFingerPrint
 
 					massage = "Fingerprint Enrolled Successfully";
 					Output.WriteLine(ConsoleColor.DarkGreen, "Fingerprint Enrolled Successfully!");
-				}
+                    notificationObj.displayNotfication("Fingerprint Enrolled Successfully!");
+
+                }
 							catch (SystemException ex)
 							{
 								throw new Exception("System Exception!");

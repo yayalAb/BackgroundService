@@ -1,0 +1,1 @@
+dotnet run --project C:\Users\Yayal\Documents\OCRA Project\FpBackgroundService\MyBackgroudService.csproj
